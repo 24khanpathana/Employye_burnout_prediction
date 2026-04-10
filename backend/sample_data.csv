@@ -1,0 +1,16 @@
+employee_id,name,salary,working_hours,stress_level,experience,department,overtime_frequency,work_life_balance_score,leave_taken,performance_rating
+EMP-001,Rajesh Kumar,85000,55,8,3.5,Engineering,4,3,10,4
+EMP-002,Priya Sharma,92000,40,4,5.0,Engineering,1,8,20,5
+EMP-003,Amit Patel,65000,50,7,2.0,Sales,3,4,5,3
+EMP-004,Anjali Singh,71000,42,5,1.5,HR,2,7,15,4
+EMP-005,Vikram Gupta,120000,65,9,8.0,Engineering,5,2,2,4
+EMP-006,Meera Joshi,55000,45,6,1.0,Marketing,2,6,12,3
+EMP-007,Arjun Nair,78000,52,7,4.0,Sales,3,5,8,3
+EMP-008,Sunita Rao,95000,38,3,6.5,HR,1,9,22,5
+EMP-009,Karan Mehta,68000,60,9,3.0,Engineering,4,2,4,2
+EMP-010,Deepa Krishnan,88000,44,4,7.0,Marketing,2,8,18,5
+EMP-011,Rohan Verma,62000,58,8,2.5,Sales,4,3,6,2
+EMP-012,Nisha Agarwal,105000,41,3,9.0,Engineering,1,9,25,5
+EMP-013,Suresh Iyer,73000,53,6,3.8,Operations,3,5,10,3
+EMP-014,Pooja Reddy,81000,47,5,4.2,Marketing,2,7,16,4
+EMP-015,Alok Bharti,59000,62,9,1.8,Operations,5,2,3,2

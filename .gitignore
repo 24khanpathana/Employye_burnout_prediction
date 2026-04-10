@@ -1,0 +1,44 @@
+# ===== Frontend =====
+node_modules/
+.next/
+dist/
+build/
+out/
+
+# Lock files (regenerate with npm install or pnpm install)
+package-lock.json
+pnpm-lock.yaml
+
+# Auto-generated TypeScript
+next-env.d.ts
+
+# ===== Backend (Python) =====
+backend/venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+
+# ===== Environment Variables =====
+.env
+.env.local
+.env*.local
+
+# ===== OS / Editor =====
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# ===== v0 / Vercel sandbox internals =====
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.v0-trash/
+.vercel/
+next.user-config.*
