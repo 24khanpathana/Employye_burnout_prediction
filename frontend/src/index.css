@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, sans-serif;
+  color: #e2e8f0;
+  background: #020817;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+html, body, #root {
+  margin: 0;
+  min-height: 100%;
+  background: #020817;
+}
+
+body {
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.card {
+  @apply rounded-xl border border-slate-700 bg-slate-900/80 shadow-soft;
+}
+
+.btn-primary {
+  @apply rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500;
+}
+
+.btn-secondary {
+  @apply rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-700;
+}
+
+.input {
+  @apply w-full rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-100 outline-none ring-0 placeholder:text-slate-400 focus:border-blue-500;
+}
+
+.label {
+  @apply mb-2 block text-sm font-medium text-slate-300;
+}
+
+.admin-shell {
+  color: #0f172a;
+}
+
+.admin-page-content .bg-slate-900,
+.admin-page-content .bg-slate-900\/90,
+.admin-page-content .bg-slate-900\/80,
+.admin-page-content .bg-slate-900\/50 {
+  background-color: #fff !important;
+}
+
+.admin-page-content .bg-slate-950,
+.admin-page-content [class~="bg-[#030914]"] {
+  background-color: #f8fafc !important;
+}
+
+.admin-page-content .text-slate-100,
+.admin-page-content .text-slate-200 {
+  color: #0f172a !important;
+}
+
+.admin-page-content .text-slate-300,
+.admin-page-content .text-slate-400,
+.admin-page-content .text-slate-500 {
+  color: #64748b !important;
+}
+
+.admin-page-content .border-slate-800,
+.admin-page-content .border-slate-700,
+.admin-page-content .border-slate-600 {
+  border-color: #e2e8f0 !important;
+}
+
+.admin-page-content .hover\:bg-slate-800:hover,
+.admin-page-content .hover\:bg-slate-900:hover,
+.admin-page-content .hover\:bg-slate-800\/50:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.admin-page-content .hover\:text-white:hover {
+  color: #0f172a !important;
+}
+
+.admin-page-content .input {
+  border-color: #cbd5e1;
+  background-color: #fff;
+  color: #0f172a;
+}
+
+.admin-page-content .btn-secondary {
+  border-color: #cbd5e1;
+  background-color: #fff;
+  color: #334155;
+}
+
+.admin-page-content .btn-secondary:hover {
+  background-color: #f1f5f9;
+}
+
+.admin-page-content .label {
+  color: #334155;
+}

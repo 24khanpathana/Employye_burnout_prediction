@@ -1,0 +1,17 @@
+node_modules/
+.env
+.env.local
+.DS_Store
+dist/
+coverage/
+backend/node_modules/
+frontend/node_modules/
+backend/.env
+frontend/.env
+ml/venv/
+ml/__pycache__/
+ml/model/*.pkl
+ml/scaler/*.pkl
+ml/encoders/*.pkl
+ml/model/*.json
+*.log
