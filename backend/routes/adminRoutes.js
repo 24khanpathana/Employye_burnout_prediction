@@ -3,7 +3,7 @@ import multer from 'multer';
 import axios from 'axios';
 import { randomUUID } from 'node:crypto';
 import { authenticateAdmin } from '../middleware/auth.js';
-import { getStore, persistStore, createNotification, importEmployeeDataset } from '../services/store.js';
+import { getStore, persistStore, createNotification } from '../services/store.js';
 import {
   createDefaultQuestions,
   DEFAULT_SCORING_WEIGHTS,
@@ -24,6 +24,33 @@ const uploadCsv = (req, res, next) => upload.single('file')(req, res, (error) =>
   if (error) return res.status(400).json({ message: error.message });
   return next();
 });
+
+async function trainUploadedDataset(csv, filename) {
+  const configuredUrl = String(process.env.PYTHON_ML_URL || 'http://127.0.0.1:8001').replace(/\/+$/, '');
+  const serviceUrls = [...new Set([configuredUrl, 'http://127.0.0.1:8001', 'http://localhost:8001'])];
+  let lastError;
+
+  for (const serviceUrl of serviceUrls) {
+    try {
+      const health = await axios.get(`${serviceUrl}/health`, { timeout: 5000 });
+      if (health.data?.status !== 'ok' || !health.data?.models) continue;
+      const response = await axios.post(`${serviceUrl}/train`, { filename, csv }, {
+        timeout: Number(process.env.ML_TRAINING_TIMEOUT_MS || 300000),
+        maxBodyLength: Infinity
+      });
+      return response.data;
+    } catch (error) {
+      lastError = error;
+      if (error.response?.status !== 404) throw error;
+    }
+  }
+
+  if (lastError?.response?.status === 404) {
+    throw new Error('The running BurnoutGuard ML service is outdated and does not expose /train. Stop the old ML process and restart it from the project ml folder on port 8001.');
+  }
+  if (lastError) throw lastError;
+  throw new Error('BurnoutGuard ML service was not found. Start it on port 8001 with: uvicorn service:app --host 127.0.0.1 --port 8001');
+}
 
 router.use(authenticateAdmin);
 router.use((req, res, next) => {
@@ -85,6 +112,7 @@ router.get('/dashboard', async (req, res) => {
       }).length
     },
     employees: activeEmployees.map(withoutPasswordHash),
+    dataset: store.dataset || null,
     requests: store.registrations.map(withoutPasswordHash),
     notifications: store.notifications,
     departments: groupDepartments(activeEmployees, store.departments),
@@ -440,8 +468,31 @@ router.post('/dataset/csv', uploadCsv, async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'Choose a CSV file to upload.' });
 
   try {
-    const result = await importEmployeeDataset(req.file.buffer.toString('utf8'), req.file.originalname);
-    return res.json({ message: `Imported ${result.count} records; ${result.duplicates} duplicates and ${result.rejected} invalid rows were skipped.`, ...result });
+    const csv = req.file.buffer.toString('utf8');
+    let training;
+    try {
+      training = await trainUploadedDataset(csv, req.file.originalname);
+    } catch (error) {
+      const detail = error.response?.data?.detail || error.message;
+      return res.status(202).json({
+        message: `Dataset analysis was not completed: ${detail}`,
+        training: { status: 'not-trained', detail }
+      });
+    }
+    const store = await getStore();
+    store.dataset = {
+      source: req.file.originalname,
+      ...training.analysis,
+      metrics: training.metrics,
+      models: training.models,
+      analyzedAt: new Date().toISOString()
+    };
+    await persistStore(store);
+    return res.json({
+      message: `Analyzed ${training.analysis.rows} rows and trained ${training.models.join(' and ')} model${training.models.length === 1 ? '' : 's'}. See the dataset analysis below.`,
+      analysis: store.dataset,
+      training
+    });
   } catch (error) {
     return res.status(400).json({ message: error.message });
   }
@@ -459,8 +510,30 @@ router.post('/dataset/google-sheets', async (req, res) => {
     if (contentType.includes('text/html') || bodyStart.startsWith('<!doctype') || bodyStart.startsWith('<html')) {
       throw new Error('Google Sheet could not be read. Set sharing to “Anyone with the link” as Viewer and try again.');
     }
-    const result = await importEmployeeDataset(response.data, 'Google Sheets');
-    return res.json({ message: `Imported ${result.count} records; ${result.duplicates} duplicates and ${result.rejected} invalid rows were skipped.`, ...result });
+    let training;
+    try {
+      training = await trainUploadedDataset(response.data, 'Google Sheets.csv');
+    } catch (error) {
+      const detail = error.response?.data?.detail || error.message;
+      return res.status(202).json({
+        message: `Dataset analysis was not completed: ${detail}`,
+        training: { status: 'not-trained', detail }
+      });
+    }
+    const store = await getStore();
+    store.dataset = {
+      source: 'Google Sheets',
+      ...training.analysis,
+      metrics: training.metrics,
+      models: training.models,
+      analyzedAt: new Date().toISOString()
+    };
+    await persistStore(store);
+    return res.json({
+      message: `Analyzed ${training.analysis.rows} rows and trained ${training.models.join(' and ')} model${training.models.length === 1 ? '' : 's'}. See the dataset analysis below.`,
+      analysis: store.dataset,
+      training
+    });
   } catch (error) {
     const message = error.response?.status === 404
       ? 'Google Sheet was not found. Check the URL and make sure the sheet is public.'

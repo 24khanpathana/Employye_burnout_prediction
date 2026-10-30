@@ -92,19 +92,19 @@ cd ml
 py -3.13 -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-uvicorn service:app --reload --port 8000
+uvicorn service:app --reload --host 127.0.0.1 --port 8001
 ```
 
-`GET /health` reports whether trained burnout and attrition artifacts are available. The prediction API uses the preserved burnout formula and VADER sentiment. XGBoost predictions are returned only when the corresponding trained artifact exists; the service does not invent attrition predictions when no attrition model is trained.
+`GET /health` reports whether trained burnout and attrition artifacts are available. The prediction API uses the preserved burnout formula and VADER sentiment. XGBoost predictions are returned only when the corresponding trained artifact exists; the service does not invent attrition predictions when no attrition model is trained. Uploading a labeled CSV through the admin dashboard analyzes and trains from that dataset, then displays row/column counts, target-label distribution, and model metrics in Settings. The raw rows are not added to the employee directory. Target columns must contain real labels, with at least two rows per class. The service reloads the newly trained models for subsequent predictions.
 
-Train from a real, labeled employee CSV:
+Train manually from a real, labeled employee CSV (CSV and Google Sheets uploads from the admin dashboard also trigger this through the running ML service):
 
 ```powershell
 cd ml
-python train_model.py C:\path\to\labeled-employees.csv
+python train_model.py "D:\path with spaces\labeled-employees.csv"
 ```
 
-The CSV must contain a real `BurnoutRisk` and/or `AttritionRisk` target. The training script does not create sample employees or synthesize target labels. It reports Accuracy, Precision, Recall, F1, ROC-AUC, and a confusion matrix from a stratified holdout set. Use a dataset with at least two examples per class. Generated models and metrics are excluded from source control.
+The CSV must contain a real `BurnoutRisk` and/or `AttritionRisk` target. Quote the whole file path when it contains spaces. The training script does not create sample employees or synthesize target labels. It reports Accuracy, Precision, Recall, F1, ROC-AUC, and a confusion matrix from a stratified holdout set. Use a dataset with at least two examples per class. Generated models and metrics are excluded from source control. The dashboard uses the uploaded dataset directly for training; failed training does not import it or replace current models.
 
 The formula score is `25% overtime + 20% projects + 15% leave + 15% inverse work-life balance + 10% inverse training + 10% inverse customer satisfaction + 5% promotion gap`, with each component normalized and bounded using the defaults in `ml/burnout_score.py`. Risk bands are low (0–39), medium (40–69), and high (70–100). When training the burnout model, the dataset's normalization values are stored beside the artifact and reused by the service.
 

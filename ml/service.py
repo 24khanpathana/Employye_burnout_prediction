@@ -1,4 +1,6 @@
 import json
+import logging
+from threading import Lock
 from pathlib import Path
 
 import joblib
@@ -8,15 +10,23 @@ from pydantic import BaseModel
 
 from burnout_score import DEFAULT_MAX_VALUES, calculate_burnout_score, classify_burnout
 from sentiment_analysis import analyze_sentiment_text
+from train_model import summarize_dataset, train_dataset
 
 app = FastAPI(title='BurnoutGuard ML Service')
+logger = logging.getLogger(__name__)
 
 
 class PredictionRequest(BaseModel):
     data: dict
 
 
+class TrainingRequest(BaseModel):
+    filename: str = 'admin-upload.csv'
+    csv: str
+
+
 MODEL_DIR = Path(__file__).resolve().parent / 'model'
+TRAINING_LOCK = Lock()
 FEATURE_COLUMNS = [
     'Age', 'Department', 'JobRole', 'EducationLevel', 'MonthlySalary', 'OvertimeHoursPerMonth',
     'LeavesTaken', 'ProjectsHandled', 'TrainingHours', 'CustomerSatisfaction', 'YearsAtCompany',
@@ -32,6 +42,38 @@ def health():
             'attrition': attrition_model is not None
         }
     }
+
+
+@app.post('/train')
+def train(payload: TrainingRequest):
+    global burnout_model, attrition_model, normalization
+    try:
+        analysis = summarize_dataset(payload.csv)
+        if not TRAINING_LOCK.acquire(blocking=False):
+            raise HTTPException(status_code=409, detail='Model training is already in progress.')
+        try:
+            metrics = train_dataset(payload.csv)
+            burnout_model = load_model('burnout_xgboost.pkl')
+            attrition_model = load_model('attrition_xgboost.pkl')
+            normalization = load_normalization()
+        finally:
+            TRAINING_LOCK.release()
+        return {
+            'message': f"Trained models from {Path(payload.filename).name}.",
+            'models': list(metrics),
+            'metrics': metrics,
+            'analysis': analysis
+        }
+    except (ValueError, pd.errors.ParserError, UnicodeDecodeError) as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except HTTPException:
+        raise
+    except Exception as error:
+        logger.exception('Model training failed')
+        raise HTTPException(
+            status_code=500,
+            detail=f'Model training failed ({type(error).__name__}): {error}'
+        ) from error
 
 
 @app.post('/predict')
